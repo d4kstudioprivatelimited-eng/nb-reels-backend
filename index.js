@@ -6,14 +6,17 @@ const cloudinary = require('cloudinary').v2;
 const sqlite3 = require('sqlite3').verbose();
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto'); // Built-in Node.js module for security/hashing
-const os = require('os'); // NAYA: Server RAM Load check karne ke liye
+const crypto = require('crypto'); 
+const os = require('os'); 
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json()); // JSON data read karne ke liye (AI Support)
 app.use(express.urlencoded({ extended: true }));
 
+// ==========================================
+// LIVE DEBUGGING MIDDLEWARE
+// ==========================================
 app.use((req, res, next) => {
     console.log("➡️ URL AAYA:", req.url);
     console.log("➡️ QUERY DATA:", req.query);
@@ -24,7 +27,7 @@ app.use((req, res, next) => {
 const upload = multer({ dest: '/tmp/' });
 
 // ==========================================
-// ZEGOCLOUD TOKEN API (Using Native Node.js Crypto)
+// ZEGOCLOUD TOKEN API 
 // ==========================================
 app.get('/api/zego_token', (req, res) => {
     const appID = 871581678; 
@@ -35,7 +38,7 @@ app.get('/api/zego_token', (req, res) => {
     if (!userID || !roomID) return res.status(400).json({ status: 'error', message: 'Missing parameters.' });
 
     try {
-        const expireTime = 86400; // 24 hours
+        const expireTime = 86400; 
         const currentTime = Math.floor(Date.now() / 1000);
         const expire = currentTime + expireTime;
         
@@ -62,7 +65,7 @@ app.get('/api/zego_token', (req, res) => {
 
         res.json({ status: 'success', token: token });
     } catch (error) {
-        console.error("Zego Token Generation Error:", error);
+        console.error("❌ Zego Token Generation Error:", error.message);
         res.status(500).json({ status: 'error', message: 'Failed to connect to Live Server.' });
     }
 });
@@ -74,8 +77,8 @@ const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const SENDER_EMAIL = 'imtiyaz6201260615@gmail.com';
 const SENDER_NAME = 'NB Reels App';
 const FIREBASE_DB_URL = 'https://public-real-default-rtdb.firebaseio.com/';
-const FIREBASE_SECRET = 'AIzaSyCB7DDmsWmo6zebhyAgA7hRwL255Y8BMi8';
 
+// ⚠️ Yahan pehle account mein apni Cloudinary ki NUMERIC api_key zaroor daal lein
 const cloudinary_accounts = [
     { cloud_name: 'mediaflows_f2ed0bf1', api_key: 'dl3fkAVqga2vQLb92SHl0Sjol7Q', api_secret: 'yE6VnLHL_hqki-xwKCuen17X_ZY' },
     { cloud_name: 'demo_cloud_2', api_key: 'demo_key_2', api_secret: 'demo_secret_2' },
@@ -104,10 +107,10 @@ const cloudinary_accounts = [
 // ==========================================
 const db = new sqlite3.Database('/tmp/server_security.sqlite');
 db.run(`CREATE TABLE IF NOT EXISTS otp_requests (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT NOT NULL,
-    otp TEXT NOT NULL,
-    request_time INTEGER NOT NULL,
+    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+    email TEXT NOT NULL, 
+    otp TEXT NOT NULL, 
+    request_time INTEGER NOT NULL, 
     ip_address TEXT NOT NULL
 )`);
 
@@ -124,37 +127,37 @@ app.all('/', upload.any(), async (req, res) => {
     try {
         switch (action) {
 
-            // --- NAYA FUNCTION 1: SERVER STATS (Admin Panel Ke Liye) ---
+            // --- 1. ADMIN PANEL SERVER STATS ---
             case 'server_stats': {
-                const totalMem = os.totalmem();
-                const freeMem = os.freemem();
+                const totalMem = os.totalmem(); 
+                const freeMem = os.freemem(); 
                 const usedMem = totalMem - freeMem;
                 const ramUsagePercentage = ((usedMem / totalMem) * 100).toFixed(2);
                 
                 let usedStorageGB = 0;
                 try {
-                    // Firebase se total videos check karke real-time estimated storage
-                    const dbRes = await axios.get(`${FIREBASE_DB_URL}videos.json?shallow=true&auth=${FIREBASE_SECRET}`);
+                    const dbRes = await axios.get(`${FIREBASE_DB_URL}videos.json?shallow=true`);
                     const totalVideos = dbRes.data ? Object.keys(dbRes.data).length : 0;
-                    usedStorageGB = (totalVideos * 5) / 1024; // Average 5MB per video
-                } catch(e) {}
+                    usedStorageGB = (totalVideos * 5) / 1024; 
+                } catch(e) {
+                    console.error("⚠️ Storage Calc Error:", e.message);
+                }
                 
-                const totalStorageGB = 500; // 20 Cloudinary Accs * 25GB
-                const freeStorage = (totalStorageGB - usedStorageGB).toFixed(2);
-
                 return res.json({ 
                     status: "success", 
-                    ram_usage: `${ramUsagePercentage}%`,
-                    used_mb: (usedMem / 1024 / 1024).toFixed(0),
-                    total_mb: (totalMem / 1024 / 1024).toFixed(0),
-                    storage_gb: freeStorage
+                    ram_usage: `${ramUsagePercentage}%`, 
+                    used_mb: (usedMem / 1024 / 1024).toFixed(0), 
+                    total_mb: (totalMem / 1024 / 1024).toFixed(0), 
+                    storage_gb: (500 - usedStorageGB).toFixed(2) 
                 });
             }
 
-            // --- NAYA FUNCTION 2: AI CUSTOMER SUPPORT ---
+            // --- 2. AI CUSTOMER SUPPORT ---
             case 'ai_support': {
                 const userMessage = req.body.message;
-                if (!userMessage) return res.json({ status: "error", message: "No message." });
+                console.log("🤖 AI Ke Liye Message Aaya:", userMessage);
+                
+                if (!userMessage) return res.json({ status: "error", message: "No message received." });
 
                 try {
                     const aiResponse = await axios.post('https://mr4k09.alwaysdata.net/index.php', {
@@ -162,23 +165,22 @@ app.all('/', upload.any(), async (req, res) => {
                         isImageRequest: false,
                         imageBase64: null
                     }, {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': 'Bearer D4K-AIU6WD4D1FEJ'
+                        headers: { 
+                            'Content-Type': 'application/json', 
+                            'Authorization': 'Bearer D4K-AIU6WD4D1FEJ' 
                         }
                     });
                     
-                    // API ka response nikalna
                     let aiText = aiResponse.data.response || aiResponse.data.reply || aiResponse.data.answer || (typeof aiResponse.data === 'string' ? aiResponse.data : JSON.stringify(aiResponse.data));
-
+                    console.log("✅ AI Reply Bheja Gaya:", aiText);
                     return res.json({ status: "success", reply: aiText });
                 } catch (error) {
-                    console.error("AI API Error:", error);
-                    return res.json({ status: "error", message: "AI Server busy hai, baad mein try karein." });
+                    console.error("❌ AI API Error:", error.response ? error.response.data : error.message);
+                    return res.json({ status: "error", message: "AI Server abhi busy hai." });
                 }
             }
 
-            // --- PURANE FUNCTIONS (Bina Kisi Change Ke) ---
+            // --- 3. REQUEST OTP (Full Company Details) ---
             case 'request_otp': {
                 const email = req.body.email;
                 if (!email || !/^\S+@\S+\.\S+$/.test(email)) return res.json({ status: "error", message: "Invalid email address." });
@@ -225,9 +227,11 @@ app.all('/', upload.any(), async (req, res) => {
                     htmlContent: emailTemplate
                 }, { headers: { 'api-key': BREVO_API_KEY, 'Content-Type': 'application/json' } });
 
+                console.log("✅ OTP Sent to:", email);
                 return res.json({ status: "success", message: "OTP sent successfully." });
             }
 
+            // --- 4. VERIFY OTP ---
             case 'verify_otp': {
                 const { email, otp } = req.body;
                 const record = await getQuery(`SELECT * FROM otp_requests WHERE email = ? AND otp = ? ORDER BY request_time DESC LIMIT 1`, [email, otp]);
@@ -241,6 +245,7 @@ app.all('/', upload.any(), async (req, res) => {
                 }
             }
 
+            // --- 5. UPLOAD VIDEO (With Detailed Debugging) ---
             case 'upload_video': {
                 const videoFile = req.files ? req.files.find(f => f.fieldname === 'video_file') : null;
                 if (!videoFile) return res.json({ status: "error", message: "No video file selected." });
@@ -248,19 +253,25 @@ app.all('/', upload.any(), async (req, res) => {
                 let finalVideoUrl = ""; let usedAccount = ""; let uploadSuccess = false;
 
                 for (let account of cloudinary_accounts) {
+                    if (account.cloud_name.startsWith('demo_')) continue;
                     try {
                         cloudinary.config({ cloud_name: account.cloud_name, api_key: account.api_key, api_secret: account.api_secret, secure: true });
-                        const result = await cloudinary.uploader.upload(videoFile.path, { resource_type: "video", folder: "nb_reels_videos" });
-                        finalVideoUrl = result.secure_url; usedAccount = account.cloud_name; uploadSuccess = true; break; 
-                    } catch (err) { continue; }
+                        const result = await cloudinary.uploader.upload(videoFile.path, { resource_type: "video", folder: "nb_reels_videos", timeout: 120000 });
+                        finalVideoUrl = result.secure_url; usedAccount = account.cloud_name; uploadSuccess = true; 
+                        console.log("✅ Video Uploaded to Cloudinary:", finalVideoUrl);
+                        break; 
+                    } catch (err) { 
+                        console.error(`❌ Cloudinary Video Upload Error (${account.cloud_name}):`, err.message);
+                        continue; 
+                    }
                 }
-                fs.unlinkSync(videoFile.path); 
-                if (!uploadSuccess) return res.json({ status: "error", message: "Server storage full. Please try later." });
+                if (fs.existsSync(videoFile.path)) fs.unlinkSync(videoFile.path); 
+                if (!uploadSuccess) return res.json({ status: "error", message: "Server storage full or Invalid Cloudinary Key." });
 
                 const video_id = Date.now().toString();
                 const uploader_uid = req.body.uploader_uid || 'unknown';
 
-                await axios.put(`${FIREBASE_DB_URL}videos/${video_id}.json?auth=${FIREBASE_SECRET}`, {
+                await axios.put(`${FIREBASE_DB_URL}videos/${video_id}.json`, {
                     video_url: finalVideoUrl, hosted_on: usedAccount, uploader_uid: uploader_uid,
                     metrics: { views: 0, likes: 0, shares: 0, comments: 0 },
                     timestamp: Math.floor(Date.now() / 1000)
@@ -268,6 +279,7 @@ app.all('/', upload.any(), async (req, res) => {
                 return res.json({ status: "success", video_id: video_id, message: "Video uploaded successfully." });
             }
 
+            // --- 6. UPLOAD DP (With Detailed Debugging) ---
             case 'upload_dp': {
                 const dpFile = req.files ? req.files.find(f => f.fieldname === 'dp_file') : null;
                 if (!dpFile) return res.json({ status: "error", message: "No image file selected." });
@@ -275,23 +287,30 @@ app.all('/', upload.any(), async (req, res) => {
                 let finalDpUrl = ""; let uploadSuccess = false;
 
                 for (let account of cloudinary_accounts) {
+                    if (account.cloud_name.startsWith('demo_')) continue;
                     try {
                         cloudinary.config({ cloud_name: account.cloud_name, api_key: account.api_key, api_secret: account.api_secret, secure: true });
                         const result = await cloudinary.uploader.upload(dpFile.path, { resource_type: "image", folder: "nb_reels_dp" });
-                        finalDpUrl = result.secure_url; uploadSuccess = true; break;
-                    } catch (err) { continue; }
+                        finalDpUrl = result.secure_url; uploadSuccess = true; 
+                        console.log("✅ DP Uploaded to Cloudinary:", finalDpUrl);
+                        break;
+                    } catch (err) { 
+                        console.error(`❌ Cloudinary DP Upload Error (${account.cloud_name}):`, err.message);
+                        continue; 
+                    }
                 }
-                fs.unlinkSync(dpFile.path);
-                if (!uploadSuccess) return res.json({ status: "error", message: "Server storage full. Please try later." });
+                if (fs.existsSync(dpFile.path)) fs.unlinkSync(dpFile.path);
+                if (!uploadSuccess) return res.json({ status: "error", message: "Server storage full or Invalid Cloudinary Key." });
                 return res.json({ status: "success", dp_url: finalDpUrl, message: "Profile picture updated." });
             }
 
             default: return res.json({ status: "error", message: "Invalid request." });
         }
     } catch (err) {
+        console.error("🚨 CRITICAL SERVER ERROR:", err.response ? err.response.data : err.message);
         return res.json({ status: "error", message: "Network error. Please try again." });
     }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => { console.log(`Node.js server running on port ${PORT}`); });
+app.listen(PORT, () => { console.log(`🚀 Node.js server running smoothly on port ${PORT}`); });
