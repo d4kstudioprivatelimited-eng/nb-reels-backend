@@ -80,7 +80,7 @@ const FIREBASE_DB_URL = 'https://public-real-default-rtdb.firebaseio.com/';
 
 // ⚠️ Yahan pehle account mein apni Cloudinary ki NUMERIC api_key zaroor daal lein
 const cloudinary_accounts = [
-    { cloud_name: 'mediaflows_f2ed0bf1', api_key: 'dl3fkAVqga2vQLb92SHl0Sjol7Q', api_secret: 'yE6VnLHL_hqki-xwKCuen17X_ZY' },
+    { cloud_name: 'mediaflows_f2ed0bf1-5276-4663-a467-b68cd4de5fbd', api_key: '233396844852494', api_secret: 'yE6VnLHL_hqki-xwKCuen17X_ZY' },
     { cloud_name: 'demo_cloud_2', api_key: 'demo_key_2', api_secret: 'demo_secret_2' },
     { cloud_name: 'demo_cloud_3', api_key: 'demo_key_3', api_secret: 'demo_secret_3' },
     { cloud_name: 'demo_cloud_4', api_key: 'demo_key_4', api_secret: 'demo_secret_4' },
